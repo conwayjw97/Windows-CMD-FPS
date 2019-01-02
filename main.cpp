@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <math.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -38,13 +39,13 @@ int main()
     map += L"#..............#";
     map += L"#...#......#...#";
     map += L"#..............#";
-    map += L"#...#......#...#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..##..........#";
-    map += L"#..##..........#";
-    map += L"#..............#";
+    map += L"#...#....###..##";
+    map += L"#........#.....#";
+    map += L"#........#.....#";
+    map += L"#.....########.#";
+    map += L"#..##........#.#";
+    map += L"#..##........#.#";
+    map += L"#............#.#";
     map += L"#...############";
     map += L"#..............#";
     map += L"################";
@@ -64,11 +65,11 @@ int main()
         // Handle CCW Rotation
         if(GetAsyncKeyState((unsigned short)'A') & 0x8000)
         {
-            fPlayerA -= 0.8f * fElapsedTime;
+            fPlayerA -= 1.0f * fElapsedTime;
         }
         if(GetAsyncKeyState((unsigned short)'D') & 0x8000)
         {
-            fPlayerA += 0.8f * fElapsedTime;
+            fPlayerA += 1.0f * fElapsedTime;
         }
         if(GetAsyncKeyState((unsigned short)'W') & 0x8000)
         {
@@ -149,9 +150,10 @@ int main()
                         });
 
                         float fBound = 0.005;
-                        if(acos(p.at(0).second) < fBound) bBoundary = true;
-                        if(acos(p.at(1).second) < fBound) bBoundary = true;
-                        if(acos(p.at(2).second) < fBound) bBoundary = true;
+                        if(acos(p.at(0).second) < fBound)
+                            bBoundary = true;
+                        if(acos(p.at(1).second) < fBound)
+                            bBoundary = true;
                     }
                 }
             }
@@ -174,7 +176,8 @@ int main()
             else                                        // Very far
                 wShade=' ';
 
-            if(bBoundary) wShade = ' ';
+            if(bBoundary)
+                wShade = ' ';
 
 
             for(int y=0; y<nScreenHeight; y++)
@@ -205,6 +208,19 @@ int main()
                 }
             }
         }
+
+        // Display Stats
+        //swprintf_s(screen, 40, L"X=%3.2f, Y=%3.2f, A=%3.2f FPS=%3.2f ", fPlayerX, fPlayerY, fPlayerA, 1.0f/fElapsedTime);
+
+        // Display Map
+        for (int nx = 0; nx < nMapWidth; nx++)
+        {
+            for (int ny = 0; ny < nMapWidth; ny++)
+            {
+                screen[(ny) * nScreenWidth + nx] = map[ny * nMapWidth + (nMapWidth - nx - 1)];
+            }
+        }
+        screen[((int)fPlayerY) * nScreenWidth + (int)(nMapWidth -  fPlayerX)] = 'P';
 
         screen[nScreenWidth * nScreenHeight - 1] - '\0';
         WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, {0,0}, &dwBytesWritten);
