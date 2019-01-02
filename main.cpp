@@ -30,18 +30,18 @@ int main()
 
     map += L"################";
     map += L"#..............#";
+    map += L"#...#......#...#";
+    map += L"#..............#";
+    map += L"#...#......#...#";
+    map += L"#..............#";
+    map += L"#...#......#...#";
     map += L"#..............#";
     map += L"#..............#";
     map += L"#..............#";
+    map += L"#..##..........#";
+    map += L"#..##..........#";
     map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
-    map += L"#..............#";
+    map += L"#...############";
     map += L"#..............#";
     map += L"################";
 
@@ -117,18 +117,19 @@ int main()
             int nCeiling = (float)(nScreenHeight / 2.0) - nScreenHeight / ((float)fDistanceToWall);
             int nFloor = nScreenHeight - nCeiling;
 
-            short nShade = ' ';
+            short wShade = ' ';
+            short fShade = ' ';
 
             if (fDistanceToWall <= fDepth / 4.0f)       // Very close
-                nShade=0x2588;
+                wShade=0x2588;
             else if (fDistanceToWall <= fDepth / 3.0f)
-                nShade=0x2593;
+                wShade=0x2593;
             else if (fDistanceToWall <= fDepth / 2.0f)
-                nShade=0x2592;
+                wShade=0x2592;
             else if (fDistanceToWall <= fDepth / 1.0f)
-                nShade=0x2591;
+                wShade=0x2591;
             else                                        // Very far
-                nShade=' ';
+                wShade=' ';
 
 
             for(int y=0; y<nScreenHeight; y++)
@@ -139,11 +140,23 @@ int main()
                 }
                 else if(y > nCeiling && y <= nFloor)
                 {
-                    screen[y * nScreenWidth + x] = nShade;
+                    screen[y * nScreenWidth + x] = wShade;
                 }
                 else
                 {
-                    screen[y * nScreenWidth + x] = ' ';
+                    // Shade floor based on distance
+                    float b = 1.0f - (((float)y - nScreenHeight / 2.0f) / ((float)nScreenHeight / 2.0f));
+                    if(b<0.25)
+                        fShade = '#';
+                    else if(b<0.50)
+                        fShade = 'x';
+                    else if(b<0.75)
+                        fShade = '.';
+                    else if(b<0.9)
+                        fShade = '-';
+                    else
+                        fShade = ' ';
+                    screen[y * nScreenWidth + x] = fShade;
                 }
             }
         }
