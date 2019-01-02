@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1546429551 source:c:\users\cigol\documents\codeblocks\console-fps\main.cpp
+	<iostream>
+	<windows.h>
+	<math.h>
+
