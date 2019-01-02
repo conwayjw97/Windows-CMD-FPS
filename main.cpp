@@ -1,7 +1,11 @@
 #include <iostream>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <chrono>
+
 #include <windows.h>
 #include <math.h>
-#include <chrono>
 
 using namespace std;
 
@@ -72,7 +76,8 @@ int main()
             fPlayerY += cosf(fPlayerA) * 5.0f * fElapsedTime;
 
             // If the player hits a wall move them back
-            if(map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#'){
+            if(map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#')
+            {
                 fPlayerX -= sinf(fPlayerA) * 5.0f * fElapsedTime;
                 fPlayerY -= cosf(fPlayerA) * 5.0f * fElapsedTime;
             }
@@ -83,7 +88,8 @@ int main()
             fPlayerY -= cosf(fPlayerA) * 5.0f * fElapsedTime;
 
             // If the player hits a wall move them forwards
-            if(map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#'){
+            if(map[(int)fPlayerY * nMapWidth + (int)fPlayerX] == '#')
+            {
                 fPlayerX += sinf(fPlayerA) * 5.0f * fElapsedTime;
                 fPlayerY += cosf(fPlayerA) * 5.0f * fElapsedTime;
             }
@@ -96,6 +102,7 @@ int main()
 
             float fDistanceToWall = 0;
             bool bHitWall = false;
+            bool bBoundary = false;
 
             // Unit vector for ray in player space
             float fEyeX = sinf(fRayAngle);
@@ -121,6 +128,30 @@ int main()
                     if(map[nTestY * nMapWidth + nTestX] == '#')
                     {
                         bHitWall = true;
+
+                        vector<pair<float, float>> p; // Distance, Dot-product
+
+                        for(int tx=0; tx<2; tx++)
+                        {
+                            for(int ty=0; ty<2; ty++)
+                            {
+                                float vx = (float)nTestX + tx - fPlayerX;
+                                float vy = (float)nTestY + ty - fPlayerY;
+                                float d = sqrt(vx*vx + vy*vy);
+                                float dot = (fEyeX * vx / d) + (fEyeY * vy / d);
+                                p.push_back(make_pair(d, dot));
+                            }
+                        }
+                        // Sort pairs from closest to furthest
+                        sort(p.begin(), p.end(), [](const pair<float, float> &left, const pair<float, float> &right)
+                        {
+                            return left.first < right.first;
+                        });
+
+                        float fBound = 0.005;
+                        if(acos(p.at(0).second) < fBound) bBoundary = true;
+                        if(acos(p.at(1).second) < fBound) bBoundary = true;
+                        if(acos(p.at(2).second) < fBound) bBoundary = true;
                     }
                 }
             }
@@ -142,6 +173,8 @@ int main()
                 wShade=0x2591;
             else                                        // Very far
                 wShade=' ';
+
+            if(bBoundary) wShade = ' ';
 
 
             for(int y=0; y<nScreenHeight; y++)
