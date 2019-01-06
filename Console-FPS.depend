@@ -1,7 +1,11 @@
 # depslib dependency file v1.0
-1546441021 source:c:\users\cigol\documents\codeblocks\console-fps\main.cpp
+1546793305 source:c:\users\cigol\documents\codeblocks\console-fps\main.cpp
 	<iostream>
+	<vector>
+	<utility>
+	<algorithm>
+	<chrono>
 	<windows.h>
 	<math.h>
-	<chrono>
+	<stdio.h>
 

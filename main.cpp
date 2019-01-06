@@ -31,38 +31,41 @@ int main()
     SetConsoleActiveScreenBuffer(hConsole);
     DWORD dwBytesWritten = 0;
 
+    // Define the map
     wstring map;
-
     map += L"################";
     map += L"#..............#";
-    map += L"#...#......#...#";
+    map += L"#...########...#";
     map += L"#..............#";
     map += L"#...#......#...#";
     map += L"#..............#";
     map += L"#...#....###..##";
     map += L"#........#.....#";
     map += L"#........#.....#";
-    map += L"#.....########.#";
-    map += L"#..##........#.#";
-    map += L"#..##........#.#";
-    map += L"#............#.#";
-    map += L"#...############";
+    map += L"#........#####.#";
+    map += L"#..#.........#.#";
+    map += L"#...#........#.#";
+    map += L"#....#.......#.#";
+    map += L"#.....##########";
     map += L"#..............#";
     map += L"################";
 
+    // Gather time measurements to make movement more fluid between frames
     auto tp1 = chrono::system_clock::now();
     auto tp2 = chrono::system_clock::now();
 
 
+    // Game loop
     while(true)
     {
+        // Get time since last loop
         tp2 = chrono::system_clock::now();
         chrono::duration<float> elapsedTime = tp2 - tp1;
         tp1 = tp2;
         float fElapsedTime = elapsedTime.count();
 
         // Controls
-        // Handle CCW Rotation
+        // Handle player rotation
         if(GetAsyncKeyState((unsigned short)'A') & 0x8000)
         {
             fPlayerA -= 1.0f * fElapsedTime;
@@ -71,6 +74,8 @@ int main()
         {
             fPlayerA += 1.0f * fElapsedTime;
         }
+
+        // Handle player movement
         if(GetAsyncKeyState((unsigned short)'W') & 0x8000)
         {
             fPlayerX += sinf(fPlayerA) * 5.0f * fElapsedTime;
@@ -96,6 +101,7 @@ int main()
             }
         }
 
+        // Ray-tracing loop
         for(int x=0; x<nScreenWidth; x++)
         {
             // For each column, calculate the projected ray angle onto the world space
@@ -109,6 +115,7 @@ int main()
             float fEyeX = sinf(fRayAngle);
             float fEyeY = cosf(fRayAngle);
 
+            // While this ray still has space to cover
             while(!bHitWall && fDistanceToWall < fDepth)
             {
                 fDistanceToWall += 0.1f;
@@ -120,29 +127,34 @@ int main()
                 if(nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight)
                 {
                     bHitWall = true;
-                    fDistanceToWall = fDepth; // Just set distance to max depth
+                    fDistanceToWall = fDepth; // Just set distance to max depth to exit loop
                 }
                 // Otherwise if ray is in bounds
                 else
                 {
-                    // Check if ray cell is a wall block
+                    // If ray cell is a wall block
                     if(map[nTestY * nMapWidth + nTestX] == '#')
                     {
                         bHitWall = true;
 
-                        vector<pair<float, float>> p; // Distance, Dot-product
+                        vector<pair<float, float>> p; // Distance to corner, Dot-product (angle between two vectors)
 
                         for(int tx=0; tx<2; tx++)
                         {
                             for(int ty=0; ty<2; ty++)
                             {
+                                // Vector from player to perfect corner
                                 float vx = (float)nTestX + tx - fPlayerX;
                                 float vy = (float)nTestY + ty - fPlayerY;
+                                // Magnitude of vector
                                 float d = sqrt(vx*vx + vy*vy);
+                                // Dot-product
                                 float dot = (fEyeX * vx / d) + (fEyeY * vy / d);
+
                                 p.push_back(make_pair(d, dot));
                             }
                         }
+
                         // Sort pairs from closest to furthest
                         sort(p.begin(), p.end(), [](const pair<float, float> &left, const pair<float, float> &right)
                         {
@@ -150,6 +162,7 @@ int main()
                         });
 
                         float fBound = 0.005;
+                        // If the angle between the two walls is less then fBound, we can assume it's the boundary of the cell
                         if(acos(p.at(0).second) < fBound)
                             bBoundary = true;
                         if(acos(p.at(1).second) < fBound)
@@ -165,6 +178,7 @@ int main()
             short wShade = ' ';
             short fShade = ' ';
 
+            // Determine shade of wall cell based on depth
             if (fDistanceToWall <= fDepth / 4.0f)       // Very close
                 wShade=0x2588;
             else if (fDistanceToWall <= fDepth / 3.0f)
@@ -175,11 +189,10 @@ int main()
                 wShade=0x2591;
             else                                        // Very far
                 wShade=' ';
-
             if(bBoundary)
                 wShade = ' ';
 
-
+            // Shade cell based on whether it's wall, ceiling or floor
             for(int y=0; y<nScreenHeight; y++)
             {
                 if(y < nCeiling)
@@ -192,7 +205,7 @@ int main()
                 }
                 else
                 {
-                    // Shade floor based on distance
+                    // Determine shade of floor cell based on distance
                     float b = 1.0f - (((float)y - nScreenHeight / 2.0f) / ((float)nScreenHeight / 2.0f));
                     if(b<0.25)
                         fShade = '#';
@@ -204,6 +217,7 @@ int main()
                         fShade = '-';
                     else
                         fShade = ' ';
+
                     screen[y * nScreenWidth + x] = fShade;
                 }
             }
@@ -222,7 +236,10 @@ int main()
         }
         screen[((int)fPlayerY) * nScreenWidth + (int)(nMapWidth -  fPlayerX)] = 'P';
 
+        // Tell console when to stop outputting string
         screen[nScreenWidth * nScreenHeight - 1] - '\0';
+
+        // Write to screen
         WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, {0,0}, &dwBytesWritten);
     }
 
